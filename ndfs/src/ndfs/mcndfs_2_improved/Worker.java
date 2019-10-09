@@ -1,13 +1,16 @@
-package ndfs.mcndfs_1_naive;
+package ndfs.mcndfs_2_improved;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.List;
 
 import graph.Graph;
 import graph.GraphFactory;
 import graph.State;
+
+import java.util.Collections;
 
 /**
  * This is a straightforward implementation of Figure 1 of
@@ -49,9 +52,11 @@ public class Worker extends Thread{
         this.threadCount = threadCount;
     }
 
-    private void dfsRed(State s) throws CycleFoundException {
+    private void dfsRed(graph.State s) throws CycleFoundException, InterruptedException {
         if(isInterrupted)
             throw new InterruptedException();
+        if (threadCount.get(s) == null)
+            threadCount.put(s, new AtomicInteger(0));
         colors.makePink(s, true); //new in the mc version
         List<graph.State> listOfNeighbors = graph.post(s);
         Collections.shuffle(listOfNeighbors);
@@ -60,8 +65,7 @@ public class Worker extends Thread{
                 isInterrupted = true;
                 throw new CycleFoundException();
             }
-
-            if (!colors.isPink(s) && !redStates.get(s)) { //new in the mc version
+            if (!colors.isPink(s) && redStates.get(s) == null) { //new in the mc version
                 dfsRed(t);
             }
         }
@@ -74,35 +78,36 @@ public class Worker extends Thread{
                 if(threadCount.get(s).get() == 0){
                     threadCount.get(s).notifyAll();
                 }
-                else{
+                else {
                     threadCount.get(s).wait();
                 }
             }
         }
-
         redStates.put(s, true); //new in the mc version
         colors.makePink(s, false); //new in the mc version
     }
 
-    private void dfsBlue(State s) throws CycleFoundException {
+    private void dfsBlue(graph.State s) throws CycleFoundException, InterruptedException {
         if(isInterrupted)
             throw new InterruptedException();
+        if (threadCount.get(s) == null)
+            threadCount.put(s, new AtomicInteger(0));
         colors.color(s, Color.CYAN);
         List<graph.State> listOfNeighbors = graph.post(s);
         Collections.shuffle(listOfNeighbors);
-        for (graph.State t : listOfNeighbors {
-            if (colors.hasColor(t, Color.WHITE) && !redStates.get(t)) { //new in the mc version) 
+        for (graph.State t : listOfNeighbors) {
+            if (colors.hasColor(t, Color.WHITE) && redStates.get(t) == null) { //new in the mc version)
                 dfsBlue(t);
             }
         }
         if (s.isAccepting()) {
-            threadCount.get(s).incrementAndGet(1); //new in the mc version
+            threadCount.get(s).incrementAndGet(); //new in the mc version
             dfsRed(s);
         }
         colors.color(s, Color.BLUE);
     }
 
-    private void nndfs(graph.State s) throws CycleFoundException {
+    private void nndfs(graph.State s) throws CycleFoundException, InterruptedException {
         dfsBlue(s);
     }
 
@@ -111,7 +116,10 @@ public class Worker extends Thread{
             nndfs(graph.getInitialState());
         } catch (CycleFoundException e) {
             result = true;
+        } catch (InterruptedException e){
+            System.out.println("Thread was interrupted.");
         }
+        isInterrupted = true;
     }
 
     public boolean getResult() {

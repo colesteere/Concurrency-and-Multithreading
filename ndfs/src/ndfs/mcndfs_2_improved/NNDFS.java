@@ -1,4 +1,4 @@
-package ndfs.mcndfs_1_naive;
+package ndfs.mcndfs_2_improved;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -38,26 +38,7 @@ public class NNDFS implements NDFS {
      */
     public NNDFS(File promelaFile, int numWorkers) throws FileNotFoundException
     {
-        //creates graph from the promelaFile
-        Graph graph = GraphFactory.createGraph(promelaFile);
-        State s = graph.getInitialState();
-        Stack<Stack> stack = new Stack<Stack>();
-        stack.push(s);
-        while (!stack.empty())
-        {
-            State cur = stack.pop();
-            if (redStates.get(cur) != null) //make sure that the state isnt currently red
-            {
-                continue;
-            }
-            redStates.put(cur, false);
-            threadCount.put(cur, new AtomicInteger(0));
-            List<State> states = graph.post(cur); //post(cur) traverses the rest of the graph
-            for (State next : states)
-            {
-                stack.push(next);
-            }
-        } 
+        //initialize workers
         this.workers = new Worker[numWorkers];
         for (int i = 0; i < numWorkers; i++)
         {
