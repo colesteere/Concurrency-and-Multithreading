@@ -63,7 +63,7 @@ public class NNDFS implements NDFS {
             }
             catch (InterruptedException e)
             {
-                System.err.println("Thread interrupted: " + w.toString());
+                System.err.println("InterruptedException");
             }
         }
         for (boolean b : results)

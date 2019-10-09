@@ -117,7 +117,7 @@ public class Worker extends Thread{
         } catch (CycleFoundException e) {
             result = true;
         } catch (InterruptedException e){
-            System.out.println("Thread was interrupted.");
+            System.out.println("InterruptedException");
         }
         isInterrupted = true;
     }
